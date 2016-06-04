@@ -2,17 +2,22 @@
 #Martyna Wi¹cek
 #Micha³ Herman
 library(lubridate)
+# biblioteka do MSE
+library(hydroGOF)
+library(DAAG)
+library('party')
+library(randomForest)
+
 
 # Wczytanie pliku
 bikeData <- read.csv("train.csv")
-
 # wyzerowanie niepotrzebnych kolumn
 bikeData['casual'] <- NULL
 bikeData['registered'] <- NULL
 
 # faktoryzacja danych
 # pogoda
-bikeData$weather <- factor(bikeData$weather)
+#bikeData$weather <- factor(bikeData$weather)
 # czy dzieñ œwi¹teczny
 bikeData$holiday <- factor(bikeData$holiday)
 # czy dzieñ pracuj¹cy
@@ -56,7 +61,6 @@ bikeData.copy <- bikeData
 formula <- count ~ season + holiday + workingday + weather + temp + atemp + humidity + windspeed + day + weekend + hour + month + daypart
 
 # Wa¿noœæ atrybutów
-library(randomForest)
 set.seed(415)
 fitRandomForest <- randomForest(formula, data=bikeData,importance=TRUE, ntree=250)
 importance(fitRandomForest, type=1)
@@ -85,46 +89,41 @@ sam
 trainData <- bikeData[sam==1,]
 testData <- bikeData[sam==2,]
 
-# 
-#testDataTimestamp <-trainData
-#crossDataTimestamp <- crossData
-#testDataTimestamp <- testData
-
-# zachowujemy oryginaln¹ datê
-#trainData[,1]<- NULL
-#trainData[,10]<- NULL
-#crossData[,1]<- NULL
-#crossData[,10]<- NULL
-#testData[,1]<- NULL
-#testData[,10]<- NULL
-
 # formu³a
-formulaBIKE <- count ~ season + holiday + workingday + weather + temp + atemp + humidity + windspeed + day + weekend + hour + month + daypart
+formulaBIKE <- count ~  workingday + weather + temp + atemp + humidity  + day + weekend + hour + month + daypart
 
 ##### model liniowy
 
 # z cross
-library(DAAG)
-v1<-CVlm(data=trainData, form.lm=formulaBIKE, m=10,
+v1<-CVlm(data=bikeData, form.lm=formulaBIKE, m=4,
      plotit="Observed")
 
+mse (v1$cvpred, v1$count)
+linearModel.predict.CV <- predict(v1, newdata = testData)
+final.results.linearModelCV <- data.frame(datetime = testData$datetime, count = linearModel.predict.CV, realcount = testData$count)
+
+
 # model liniowy bez cross
-linearModel <- lm(formula, data = trainData)
+linearModel <- lm(formulaBIKE, data = trainData)
 summary(linearModel)
 # predykcja modelu liniowego
 linearModel.predict <- predict(linearModel, newdata = testData)
-str(linearModel.predict)
-final.results.linearModel <- data.frame(datetime = testData$datetime, count = linearModel.predict)
+dfc <- as.data.frame(linearModel.predict)
+final.results.linearModel <- data.frame(datetime = testData$datetime, count = linearModel.predict, realcount = testData$count, mse = mse (dfc,testData$count))
 
 #### drzewo regresji
-library('party')
-fitRegressionTree <- ctree(formula, data=trainData)
+fitRegressionTree <- ctree(formulaBIKE, data=trainData)
 regressionTree.predict <- predict(fitRegressionTree, testData)
-final.result.regressionTree <- data.frame(datetime = testDataTimestamp$datetime, count=regressionTree.predict)
+final.result.regressionTree <- data.frame(datetime = testData$datetime, count=regressionTree.predict)
+
+#MSE
+mse(final.result.regressionTree$count,testData$count )
 
 #### las losowy
-library(randomForest)
 set.seed(415)
-randomForestFit <- randomForest(formula, data=trainData, importance=TRUE, ntree=250)
+randomForestFit <- randomForest(formulaBIKE, data=trainData, importance=TRUE, ntree=250)
 randomForest.predict = predict(randomForestFit, testData)
-final.result.randomForest <- data.frame(datetime = testDataTimestamp$datetime, count = randomForest.predict)
+final.result.randomForest <- data.frame(datetime = testData$datetime, count = randomForest.predict)
+
+# MSE
+mse(final.result.randomForest$count, testData$count)
