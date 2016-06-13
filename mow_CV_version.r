@@ -1,3 +1,5 @@
+setwd('C:/Users/Martyna/git/MOWMOW') 
+
 #MOW
 #Martyna Wi¹cek
 #Micha³ Herman
@@ -7,6 +9,8 @@ library(DAAG)
 library('party')
 library(randomForest)
 library(plyr)
+
+
 
 # Wczytanie pliku
 bikeData <- read.csv("train.csv")
@@ -87,8 +91,17 @@ varImpPlot(fitRandomForest)
 #daypart    25.96417
 
 # formu³a
-formulaBIKE <- count ~  workingday + weather + temp + atemp + humidity  + day + weekend + hour + month + daypart
-
+formulaBIKE <- count ~  workingday + weather +  temp + atemp  +humidity + day+ weekend +  hour +  month + daypart
+formulaBIKE <- count ~  weather +  temp + atemp  +humidity + day+ weekend +  hour +  month + daypart
+formulaBIKE <- count ~  workingday +  temp + atemp  +humidity + day+ weekend +  hour +  month + daypart
+formulaBIKE <- count ~  workingday + weather  + atemp  +humidity + day+ weekend +  hour +  month + daypart
+formulaBIKE <- count ~  workingday + weather +  temp   +humidity + day+ weekend +  hour +  month + daypart
+formulaBIKE <- count ~  workingday + weather +  temp + atemp   + day+ weekend +  hour +  month + daypart
+formulaBIKE <- count ~  workingday + weather +  temp + atemp  +humidity +  weekend +  hour +  month + daypart
+formulaBIKE <- count ~  workingday + weather +  temp + atemp  +humidity + day +  hour +  month + daypart
+formulaBIKE <- count ~  workingday + weather +  temp + atemp  +humidity + day+ weekend  +  month + daypart
+formulaBIKE <- count ~  workingday + weather +  temp + atemp  +humidity + day+ weekend +  hour  + daypart
+formulaBIKE <- count ~  workingday + weather +  temp + atemp  +humidity + day+ weekend +  hour +  month 
 ##### model liniowy
 
 prediction <- data.frame()
@@ -123,7 +136,21 @@ result$Difference <- abs(result$Actual - result$Predicted)
 # MSE
 mse(result$Predicted, result$Actual)
 
+write.table(result, file = paste0("",'resultsNodaypartdataLM.csv'), sep = ",", row.names = FALSE, quote = FALSE)
+
 #### drzewo regresji
+
+formulaBIKE <- count ~  workingday + weather +  temp + atemp  +humidity + day+ weekend +  hour +  month + daypart
+formulaBIKE <- count ~  weather +  temp + atemp  +humidity + day+ weekend +  hour +  month + daypart
+formulaBIKE <- count ~  workingday +  temp + atemp  +humidity + day+ weekend +  hour +  month + daypart
+formulaBIKE <- count ~  workingday + weather  + atemp  +humidity + day+ weekend +  hour +  month + daypart
+formulaBIKE <- count ~  workingday + weather +  temp   +humidity + day+ weekend +  hour +  month + daypart
+formulaBIKE <- count ~  workingday + weather +  temp + atemp   + day+ weekend +  hour +  month + daypart
+formulaBIKE <- count ~  workingday + weather +  temp + atemp  +humidity +  weekend +  hour +  month + daypart
+formulaBIKE <- count ~  workingday + weather +  temp + atemp  +humidity + day +  hour +  month + daypart
+formulaBIKE <- count ~  workingday + weather +  temp + atemp  +humidity + day+ weekend  +  month + daypart
+formulaBIKE <- count ~  workingday + weather +  temp + atemp  +humidity + day+ weekend +  hour  + daypart
+formulaBIKE <- count ~  workingday + weather +  temp + atemp  +humidity + day+ weekend +  hour +  month 
 
 prediction <- data.frame()
 testsetCopy <- data.frame()
@@ -134,8 +161,12 @@ for (i in 1:k){
   trainingset <- subset(bikeData, id %in% list[-i])
   testset <- subset(bikeData, id %in% c(i))
   
+  myParam =ctree_control(maxsurrogate = 2, testtype="Bonferroni", mincriterion = 0.55, minsplit=19, maxdepth = 0)
+  
+  # a new decision tree
+  
   # model drzewa regresji
-  fitRegressionTree <- ctree(formulaBIKE, data=trainingset)
+  fitRegressionTree <- ctree(formulaBIKE, data=trainingset, controls =myParam)
   
   # wykonanie predykcji
   temp <- as.data.frame(predict(fitRegressionTree, testset))
@@ -157,8 +188,23 @@ result$Difference <- abs(result$Actual - result$Predicted)
 # MSE
 mse(result$Predicted, result$Actual)
 
+write.table(result, file = paste0("",'resultsNOCROSS05519REG.csv'), sep = ",", row.names = FALSE, quote = FALSE)
+
+
 #### las losowy
 
+
+formulaBIKE <- count ~  workingday + weather +  temp + atemp  +humidity + day+ weekend +  hour +  month + daypart
+formulaBIKE <- count ~  weather +  temp + atemp  +humidity + day+ weekend +  hour +  month + daypart
+formulaBIKE <- count ~  workingday +  temp + atemp  +humidity + day+ weekend +  hour +  month + daypart
+formulaBIKE <- count ~  workingday + weather  + atemp  +humidity + day+ weekend +  hour +  month + daypart
+formulaBIKE <- count ~  workingday + weather +  temp   +humidity + day+ weekend +  hour +  month + daypart
+formulaBIKE <- count ~  workingday + weather +  temp + atemp   + day+ weekend +  hour +  month + daypart
+formulaBIKE <- count ~  workingday + weather +  temp + atemp  +humidity +  weekend +  hour +  month + daypart
+formulaBIKE <- count ~  workingday + weather +  temp + atemp  +humidity + day +  hour +  month + daypart
+formulaBIKE <- count ~  workingday + weather +  temp + atemp  +humidity + day+ weekend  +  month + daypart
+formulaBIKE <- count ~  workingday + weather +  temp + atemp  +humidity + day+ weekend +  hour  + daypart
+formulaBIKE <- count ~  workingday + weather +  temp + atemp  +humidity + day+ weekend +  hour +  month 
 
 prediction <- data.frame()
 testsetCopy <- data.frame()
@@ -174,7 +220,7 @@ for (i in 1:k){
   
   #set.seed(415)
   # las losowy
-  randomForestFit <- randomForest(formulaBIKE, data=trainingset, ntree=50)
+  randomForestFit <- randomForest(formulaBIKE, data=trainingset, ntree=250, mtry=4, replace=FALSE)
   
   # wykonanie predykcji
   temp <- as.data.frame(predict(randomForestFit, testset))
@@ -195,5 +241,8 @@ names(result) <- c("Time","Predicted", "Actual")
 result$Difference <- abs(result$Actual - result$Predicted)
 # MSE
 mse(result$Predicted, result$Actual)
+
+write.table(result, file = paste0("",'resultsNOC4443RF.csv'), sep = ",", row.names = FALSE, quote = FALSE)
+
 
 #[1] 4481.959
