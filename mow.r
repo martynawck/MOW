@@ -8,6 +8,7 @@ library(DAAG)
 library('party')
 library(randomForest)
 
+setwd('F:/mow/repo')
 
 # Wczytanie pliku
 bikeData <- read.csv("train.csv")
@@ -85,45 +86,53 @@ varImpPlot(fitRandomForest)
 # podzia³ na zbiory danych
 set.seed(1235)
 sam <- sample(2, nrow(bikeData), replace=TRUE, prob=c(0.8, 0.2))
-sam
 trainData <- bikeData[sam==1,]
 testData <- bikeData[sam==2,]
 
 # formu³a
 formulaBIKE <- count ~  workingday + weather + temp + atemp + humidity  + day + weekend + hour + month + daypart
 
+
 ##### model liniowy
 
 # z cross
-v1<-CVlm(data=bikeData, form.lm=formulaBIKE, m=4,
-     plotit="Observed")
+#v1<-CVlm(data=bikeData, form.lm=formulaBIKE, m=4,
+#     plotit="Observed")
 
-mse (v1$cvpred, v1$count)
-linearModel.predict.CV <- predict(v1, newdata = testData)
-final.results.linearModelCV <- data.frame(datetime = testData$datetime, count = linearModel.predict.CV, realcount = testData$count)
+#mse (v1$cvpred, v1$count)
+#linearModel.predict.CV <- predict(v1, newdata = testData)
+#final.results.linearModelCV <- data.frame(datetime = testData$datetime, count = linearModel.predict.CV, realcount = testData$count)
 
 
 # model liniowy bez cross
 linearModel <- lm(formulaBIKE, data = trainData)
-summary(linearModel)
+#summary(linearModel)
 # predykcja modelu liniowego
 linearModel.predict <- predict(linearModel, newdata = testData)
 dfc <- as.data.frame(linearModel.predict)
-final.results.linearModel <- data.frame(datetime = testData$datetime, count = linearModel.predict, realcount = testData$count, mse = mse (dfc,testData$count))
+final.results.linearModel <- data.frame(datetime = testData$datetime, count = linearModel.predict, realcount = testData$count)
+mse(final.results.linearModel$count, testData$count)
+write.table(final.results.linearModel, file = paste0("",'resultsLM.csv'), sep = ",", row.names = FALSE, quote = FALSE)
+  
 
 #### drzewo regresji
-fitRegressionTree <- ctree(formulaBIKE, data=trainData)
+fitRegressionTree <- ctree(formulaBIKE, data=trainData, controls=ctree_control(mincriterion = 0.20, minsplit = 21))
 regressionTree.predict <- predict(fitRegressionTree, testData)
 final.result.regressionTree <- data.frame(datetime = testData$datetime, count=regressionTree.predict)
-
+#plot(fitRegressionTree)
 #MSE
 mse(final.result.regressionTree$count,testData$count )
+write.table(final.result.regressionTree, file = paste0("",'resultsTree.csv'), sep = ",", row.names = FALSE, quote = FALSE)
+
 
 #### las losowy
 set.seed(415)
-randomForestFit <- randomForest(formulaBIKE, data=trainData, importance=TRUE, ntree=250)
+randomForestFit <- randomForest(formulaBIKE, data=trainData, importance=TRUE, ntree=145, mtry=4, nodesize=5, maxnode=NULL)
 randomForest.predict = predict(randomForestFit, testData)
 final.result.randomForest <- data.frame(datetime = testData$datetime, count = randomForest.predict)
 
 # MSE
 mse(final.result.randomForest$count, testData$count)
+
+write.table(final.result.randomForest, file = paste0("",'resultsForest.csv'), sep = ",", row.names = FALSE, quote = FALSE)
+
